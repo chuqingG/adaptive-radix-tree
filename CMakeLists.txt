@@ -25,11 +25,6 @@ set(DOCTEST_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/doctest/doctest)
 add_library(doctest INTERFACE)
 target_include_directories(doctest INTERFACE ${DOCTEST_INCLUDE_DIR})
 
-# picobench
-set(PICOBENCH_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/picobench/include)
-add_library(picobench INTERFACE)
-target_include_directories(picobench INTERFACE ${PICOBENCH_INCLUDE_DIR})
-
 # zipf
 set(ZIPF_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/zipf)
 add_library(zipf ${PROJECT_SOURCE_DIR}/third_party/zipf/zipf.cpp)
@@ -73,4 +68,4 @@ add_executable(bench
   "${PROJECT_SOURCE_DIR}/bench/query_sparse_uniform_64.cpp"
   "${PROJECT_SOURCE_DIR}/bench/query_sparse_zipf.cpp"
   )
-target_link_libraries(bench art picobench zipf)
+target_link_libraries(bench art zipf)
