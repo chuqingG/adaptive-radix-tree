@@ -10,6 +10,7 @@
 
 namespace art {
 
+template <class T> class node;
 template <class T> class inner_node;
 
 template <class T> class child_it {
@@ -21,7 +22,6 @@ public:
   child_it(child_it<T> &&other) noexcept = default;
   child_it<T> &operator=(const child_it<T> &other) = default;
   child_it<T> &operator=(child_it<T> &&other) noexcept = default;
-
 
   using iterator_category = std::bidirectional_iterator_tag;
   using value_type = const char;
@@ -51,7 +51,8 @@ private:
   int relative_index_ = 0;
 };
 
-template <class T> child_it<T>::child_it(inner_node<T> *n) : child_it<T>(n, 0) {}
+template <class T>
+child_it<T>::child_it(inner_node<T> *n) : child_it<T>(n, 0) {}
 
 template <class T>
 child_it<T>::child_it(inner_node<T> *n, int relative_index)
@@ -155,13 +156,11 @@ template <class T> bool child_it<T>::operator>(const child_it<T> &rhs) const {
   return (rhs < (*this));
 }
 
-template <class T>
-char child_it<T>::get_partial_key() const {
+template <class T> char child_it<T>::get_partial_key() const {
   return cur_partial_key_;
 }
 
-template <class T>
-node<T> *child_it<T>::get_child_node() const {
+template <class T> node<T> *child_it<T>::get_child_node() const {
   assert(0 <= relative_index_ && relative_index_ < node_->n_children());
   return *node_->find_child(cur_partial_key_);
 }
