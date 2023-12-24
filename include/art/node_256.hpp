@@ -15,7 +15,8 @@ namespace art {
 template <class T> class node_48;
 
 template <class T> class node_256 : public inner_node<T> {
-friend class node_48<T>;
+  friend class node_48<T>;
+
 public:
   node_256();
 
@@ -32,6 +33,10 @@ public:
   char prev_partial_key(char partial_key) const override;
 
   int n_children() const override;
+
+  void get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                int &usedBranching, unsigned long &totalKeySize) override;
+  int get_height() override;
 
 private:
   uint16_t n_children_ = 0;
@@ -111,6 +116,28 @@ template <class T> char node_256<T>::prev_partial_key(char partial_key) const {
 }
 
 template <class T> int node_256<T>::n_children() const { return n_children_; }
+
+template <class T>
+void node_256<T>::get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                           int &usedBranching, unsigned long &totalKeySize) {
+  numNodes++;
+  numNonleaf++;
+  totalBranching += 256;
+  usedBranching += this->n_children_;
+  totalKeySize += 256 + strlen(this->prefix_) + sizeof(this->prefix_len_);
+  for (int i = 0; i < n_children_; ++i) {
+    children_[i]->get_size(numNodes, numNonleaf, totalBranching, usedBranching,
+                           totalKeySize);
+  }
+}
+
+template <class T> int node_256<T>::get_height() {
+  int maxHeight = 0;
+  for (int i = 0; i < n_children_; ++i) {
+    maxHeight = max(maxHeight, children_[i]->get_height());
+  }
+  return maxHeight + 1;
+}
 
 } // namespace art
 

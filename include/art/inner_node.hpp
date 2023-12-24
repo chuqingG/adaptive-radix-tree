@@ -107,6 +107,9 @@ public:
    */
   child_it<T> end();
   std::reverse_iterator<child_it<T>> rend();
+  virtual void get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                        int &usedBranching, unsigned long &totalKeySize) = 0;
+  virtual int get_height() = 0;
 };
 
 template <class T> bool inner_node<T>::is_leaf() const { return false; }

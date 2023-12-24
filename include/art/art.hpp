@@ -6,8 +6,8 @@
 #ifndef ART_ART_HPP
 #define ART_ART_HPP
 
-#include "leaf_node.hpp"
 #include "inner_node.hpp"
+#include "leaf_node.hpp"
 #include "node.hpp"
 #include "node_4.hpp"
 #include "tree_it.hpp"
@@ -68,6 +68,10 @@ public:
    */
   tree_it<T> end();
 
+  void getSize(int &numNodes, int &numNonleaf, int &totalBranching,
+               int &usedBranching, unsigned long &totalKeySize);
+  int getHeight();
+
 private:
   node<T> *root_ = nullptr;
 };
@@ -85,8 +89,9 @@ template <class T> art<T>::~art() {
     cur = node_stack.top();
     node_stack.pop();
     if (!cur->is_leaf()) {
-      cur_inner = static_cast<inner_node<T>*>(cur);
-      for (it = cur_inner->begin(), it_end = cur_inner->end(); it != it_end; ++it) {
+      cur_inner = static_cast<inner_node<T> *>(cur);
+      for (it = cur_inner->begin(), it_end = cur_inner->end(); it != it_end;
+           ++it) {
         node_stack.push(*cur_inner->find_child(*it));
       }
     }
@@ -97,8 +102,7 @@ template <class T> art<T>::~art() {
   }
 }
 
-template <class T> 
-T art<T>::get(const char *key) const {
+template <class T> T art<T>::get(const char *key) const {
   node<T> *cur = root_, **child;
   int depth = 0, key_len = std::strlen(key) + 1;
   while (cur != nullptr) {
@@ -108,17 +112,17 @@ T art<T>::get(const char *key) const {
     }
     if (cur->prefix_len_ == key_len - depth) {
       /* exact match */
-      return cur->is_leaf() ? static_cast<leaf_node<T>*>(cur)->value_ : T{};
+      return cur->is_leaf() ? static_cast<leaf_node<T> *>(cur)->value_ : T{};
     }
-    child = static_cast<inner_node<T>*>(cur)->find_child(key[depth + cur->prefix_len_]);
+    child = static_cast<inner_node<T> *>(cur)->find_child(
+        key[depth + cur->prefix_len_]);
     depth += (cur->prefix_len_ + 1);
     cur = child != nullptr ? *child : nullptr;
   }
   return T{};
 }
 
-template <class T> 
-T art<T>::set(const char *key, T value) {
+template <class T> T art<T>::set(const char *key, T value) {
   int key_len = std::strlen(key) + 1, depth = 0, prefix_match_len;
   if (root_ == nullptr) {
     root_ = new leaf_node<T>(value);
@@ -156,7 +160,7 @@ T art<T>::set(const char *key, T value) {
        */
 
       /* cur must be a leaf */
-      auto cur_leaf = static_cast<leaf_node<T>*>(*cur);
+      auto cur_leaf = static_cast<leaf_node<T> *>(*cur);
       T old_value = cur_leaf->value_;
       cur_leaf->value_ = value;
       return old_value;
@@ -211,7 +215,7 @@ T art<T>::set(const char *key, T value) {
     }
 
     /* must be inner node */
-    cur_inner = reinterpret_cast<inner_node<T>**>(cur);
+    cur_inner = reinterpret_cast<inner_node<T> **>(cur);
     child_partial_key = key[depth + (**cur).prefix_len_];
     child = (**cur_inner).find_child(child_partial_key);
 
@@ -253,8 +257,7 @@ T art<T>::set(const char *key, T value) {
   }
 }
 
-template <class T> 
-T art<T>::del(const char *key) {
+template <class T> T art<T>::del(const char *key) {
   int depth = 0, key_len = std::strlen(key) + 1;
 
   if (root_ == nullptr) {
@@ -281,7 +284,7 @@ T art<T>::del(const char *key) {
       if (!(**cur).is_leaf()) {
         return T{};
       }
-      auto value = static_cast<leaf_node<T>*>(*cur)->value_;
+      auto value = static_cast<leaf_node<T> *>(*cur)->value_;
       auto n_siblings = par != nullptr ? (**par).n_children() - 1 : 0;
 
       if (n_siblings == 0) {
@@ -301,7 +304,6 @@ T art<T>::del(const char *key) {
         }
         delete (*cur);
         *cur = nullptr;
-
       } else if (n_siblings == 1) {
         /* => delete leaf node
          * => replace parent with sibling
@@ -345,14 +347,13 @@ T art<T>::del(const char *key) {
         delete (*par);
 
         /* this looks crazy, but I know what I'm doing */
-        *par = static_cast<inner_node<T>*>(sibling);
-
+        *par = static_cast<inner_node<T> *>(sibling);
       } else /* if (n_siblings > 1) */ {
         /* => delete leaf node
          *
          *        |a                         |a
          *        |                          |
-         *       (aa)        -"aaaaabaa"    (aa)   
+         *       (aa)        -"aaaaabaa"    (aa)
          *    a / |  \ b     ==========> a / |
          *     /  |   \                   /  |
          *           *()->v1
@@ -374,7 +375,7 @@ T art<T>::del(const char *key) {
     /* propagate down and repeat */
     cur_partial_key = key[depth + (**cur).prefix_len_];
     depth += (**cur).prefix_len_ + 1;
-    par = reinterpret_cast<inner_node<T>**>(cur);
+    par = reinterpret_cast<inner_node<T> **>(cur);
     cur = (**par).find_child(cur_partial_key);
   }
   return T{};
@@ -388,9 +389,16 @@ template <class T> tree_it<T> art<T>::begin(const char *key) {
   return tree_it<T>::greater_equal(this->root_, key);
 }
 
-template <class T> tree_it<T> art<T>::end() { 
-  return tree_it<T>(); 
+template <class T> tree_it<T> art<T>::end() { return tree_it<T>(); }
+
+template <class T>
+void art<T>::getSize(int &numNodes, int &numNonleaf, int &totalBranching,
+                     int &usedBranching, unsigned long &totalKeySize) {
+  this->root_->get_size(numNodes, numNonleaf, totalBranching, usedBranching,
+                        totalKeySize);
 }
+
+template <class T> int art<T>::getHeight() { return this->root_->get_height(); }
 
 } // namespace art
 

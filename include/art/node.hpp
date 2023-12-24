@@ -28,12 +28,14 @@ public:
 
   /**
    * Determines if this node is a leaf node, i.e., contains a value.
-   * Needed for downcasting a node<T> instance to a leaf_node<T> or inner_node<T> instance.
+   * Needed for downcasting a node<T> instance to a leaf_node<T> or
+   * inner_node<T> instance.
    */
   virtual bool is_leaf() const = 0;
 
   /**
-   * Determines the number of matching bytes between the node's prefix and the key.
+   * Determines the number of matching bytes between the node's prefix and the
+   * key.
    *
    * Given a node with prefix: "abbbd", a key "abbbccc",
    * check_prefix returns 4, since byte 4 of the prefix ('d') does not
@@ -48,6 +50,10 @@ public:
 
   char *prefix_ = nullptr;
   uint16_t prefix_len_ = 0;
+
+  virtual void get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                        int &usedBranching, unsigned long &totalKeySize) = 0;
+  virtual int get_height() = 0;
 };
 
 template <class T>

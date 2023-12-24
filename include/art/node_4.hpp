@@ -37,6 +37,10 @@ public:
 
   int n_children() const override;
 
+  void get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                int &usedBranching, unsigned long &totalKeySize) override;
+  int get_height() override;
+
 private:
   uint8_t n_children_ = 0;
   char keys_[4];
@@ -90,7 +94,8 @@ template <class T> inner_node<T> *node_4<T>::grow() {
   new_node->prefix_len_ = this->prefix_len_;
   new_node->n_children_ = this->n_children_;
   std::copy(this->keys_, this->keys_ + this->n_children_, new_node->keys_);
-  std::copy(this->children_, this->children_ + this->n_children_, new_node->children_);
+  std::copy(this->children_, this->children_ + this->n_children_,
+            new_node->children_);
   delete this;
   return new_node;
 }
@@ -101,9 +106,7 @@ template <class T> inner_node<T> *node_4<T>::shrink() {
 
 template <class T> bool node_4<T>::is_full() const { return n_children_ == 4; }
 
-template <class T> bool node_4<T>::is_underfull() const {
-  return false;
-}
+template <class T> bool node_4<T>::is_underfull() const { return false; }
 
 template <class T> char node_4<T>::next_partial_key(char partial_key) const {
   for (int i = 0; i < n_children_; ++i) {
@@ -127,6 +130,28 @@ template <class T> char node_4<T>::prev_partial_key(char partial_key) const {
 
 template <class T> int node_4<T>::n_children() const {
   return this->n_children_;
+}
+
+template <class T>
+void node_4<T>::get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                         int &usedBranching, unsigned long &totalKeySize) {
+  numNodes++;
+  numNonleaf++;
+  totalBranching += 4;
+  usedBranching += this->n_children_;
+  totalKeySize += 4 + strlen(this->prefix_) + sizeof(this->prefix_len_);
+  for (int i = 0; i < n_children_; ++i) {
+    children_[i]->get_size(numNodes, numNonleaf, totalBranching, usedBranching,
+                           totalKeySize);
+  }
+}
+
+template <class T> int node_4<T>::get_height() {
+  int maxHeight = 0;
+  for (int i = 0; i < n_children_; ++i) {
+    maxHeight = max(maxHeight, children_[i]->get_height());
+  }
+  return maxHeight + 1;
 }
 
 } // namespace art

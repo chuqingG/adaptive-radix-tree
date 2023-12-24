@@ -37,6 +37,10 @@ public:
 
   int n_children() const override;
 
+  void get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                int &usedBranching, unsigned long &totalKeySize) override;
+  int get_height() override;
+
 private:
   static const char EMPTY;
 
@@ -58,7 +62,6 @@ template <class T> node<T> **node_48<T>::find_child(char partial_key) {
 
 template <class T>
 void node_48<T>::set_child(char partial_key, node<T> *child) {
-
   // TODO(rafaelkallis): pick random starting entry in order to increase
   // performance? i.e. for (int i = random([0,48)); i != (i-1) % 48; i = (i+1) %
   // 48){}
@@ -66,7 +69,7 @@ void node_48<T>::set_child(char partial_key, node<T> *child) {
   /* find empty child entry */
   for (int i = 0; i < 48; ++i) {
     if (children_[i] == nullptr) {
-      indexes_[128 + partial_key] = (uint8_t) i;
+      indexes_[128 + partial_key] = (uint8_t)i;
       children_[i] = child;
       break;
     }
@@ -152,6 +155,28 @@ template <class T> char node_48<T>::prev_partial_key(char partial_key) const {
 }
 
 template <class T> int node_48<T>::n_children() const { return n_children_; }
+
+template <class T>
+void node_48<T>::get_size(int &numNodes, int &numNonleaf, int &totalBranching,
+                          int &usedBranching, unsigned long &totalKeySize) {
+  numNodes++;
+  numNonleaf++;
+  totalBranching += 48;
+  usedBranching += this->n_children_;
+  totalKeySize += 48 + strlen(this->prefix_) + sizeof(this->prefix_len_);
+  for (int i = 0; i < n_children_; ++i) {
+    children_[i]->get_size(numNodes, numNonleaf, totalBranching, usedBranching,
+                           totalKeySize);
+  }
+}
+
+template <class T> int node_48<T>::get_height() {
+  int maxHeight = 0;
+  for (int i = 0; i < n_children_; ++i) {
+    maxHeight = max(maxHeight, children_[i]->get_height());
+  }
+  return maxHeight + 1;
+}
 
 } // namespace art
 
